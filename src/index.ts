@@ -1,8 +1,3 @@
-// src/index.ts を修正して、
-// 特定の emote（emote1, emote2 など）だけを許可して表示し、
-// それ以外は従来通り除外するようにします。
-// さらに、許可された emote をキリル文字に変換します。
-
 import { build } from "./ass";
 import {
   download_comments_parallel,
@@ -41,10 +36,10 @@ const remove_downloading = function () {
   document.querySelector("#orcd-downloading")?.remove();
 };
 
-// ✅ ホワイトリストと変換マップ（今は2つだけ）
-const whitelistEmotes: Record<string, string> = {
-  "[emote:3175408:oechanOPENREC]": "О",  // キリル O
-  "[emote:55886:kickSadge]": "Ж",        // キリル ZH
+// ✅ ホワイトリスト（emote名 → キリル文字）
+const whitelist: Record<string, string> = {
+  "oechanOPENREC": "О",
+  "kickSadge": "Ж",
 };
 
 (async function () {
@@ -53,20 +48,24 @@ const whitelistEmotes: Record<string, string> = {
     const info = await info_from_url(window.location.href);
     let comments = await download_comments_parallel(info);
 
-    // ✅ emote除外処理の修正：
+    // ✅ emoteをキリル文字に変換、他は除外
     comments = comments.map((chat) => {
-      const msg = chat.message;
-      // emoteを含むが、ホワイトリストにあるなら変換する
-      for (const emote of Object.keys(whitelistEmotes)) {
+      let msg = chat.message;
+      let replaced = false;
+
+      for (const emote in whitelist) {
         if (msg.includes(emote)) {
-          chat.message = msg.replaceAll(emote, whitelistEmotes[emote]);
-          return chat; // 許可
+          msg = msg.replaceAll(emote, whitelist[emote]);
+          replaced = true;
         }
       }
-      // emote: が含まれていてホワイトリストでなければ除外
-      if (msg.includes("[emote:")) {
-        chat.message = "";
+
+      // ホワイトリストに該当しないemote的なワードがあれば削除
+      if (!replaced && msg.match(/(emote|Sadge|oechan|OPENREC)/i)) {
+        msg = "";
       }
+
+      chat.message = msg;
       return chat;
     });
 
@@ -85,4 +84,3 @@ const whitelistEmotes: Record<string, string> = {
     }
   }
 })();
-
