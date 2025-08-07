@@ -36,36 +36,15 @@ const remove_downloading = function () {
   document.querySelector("#orcd-downloading")?.remove();
 };
 
-// ✅ ホワイトリスト：emote名 → キリル文字
-const whitelistEmotes: Record<string, string> = {
-  "kickSadge": "Ж",        // キリル ZH
-  "oechanOPENREC": "О",    // キリル O
-};
-
 (async function () {
   try {
     show_downloading();
     const info = await info_from_url(window.location.href);
     let comments = await download_comments_parallel(info);
 
-    // ✅ emote除外・変換処理
+    // ✅ フィルタも変換も行わず、すべてのコメントをそのまま残す
     comments = comments.map((chat) => {
-      const originalMsg = chat.message;
-
-      // ホワイトリストに含まれるemote名が含まれていれば変換
-      for (const [emoteName, replacement] of Object.entries(whitelistEmotes)) {
-        if (originalMsg.includes(emoteName)) {
-          chat.message = originalMsg.replaceAll(emoteName, replacement);
-          return chat; // 変換してそのまま使う
-        }
-      }
-
-      // emoteという文字列が含まれていれば除外（空文字化）
-      if (originalMsg.includes("emote")) {
-        chat.message = "";
-      }
-
-      return chat;
+      return chat; // messageそのまま
     });
 
     const randomizedComments = randomize(comments);
