@@ -36,10 +36,10 @@ const remove_downloading = function () {
   document.querySelector("#orcd-downloading")?.remove();
 };
 
-// ✅ キリル変換対象の emote（文字列部分のみ）とその変換後文字
+// ✅ ホワイトリスト：emote名 → キリル文字
 const whitelistEmotes: Record<string, string> = {
-  "oechanOPENREC": "О", // キリル O
-  "kickSadge": "Ж",     // キリル ZH
+  "kickSadge": "Ж",        // キリル ZH
+  "oechanOPENREC": "О",    // キリル O
 };
 
 (async function () {
@@ -48,24 +48,23 @@ const whitelistEmotes: Record<string, string> = {
     const info = await info_from_url(window.location.href);
     let comments = await download_comments_parallel(info);
 
+    // ✅ emote除外・変換処理
     comments = comments.map((chat) => {
-      let msg = chat.message;
-      let converted = false;
+      const originalMsg = chat.message;
 
-      // キリル文字への変換
-      for (const [target, replacement] of Object.entries(whitelistEmotes)) {
-        if (msg.includes(target)) {
-          msg = msg.replaceAll(target, replacement);
-          converted = true;
+      // ホワイトリストに含まれるemote名が含まれていれば変換
+      for (const [emoteName, replacement] of Object.entries(whitelistEmotes)) {
+        if (originalMsg.includes(emoteName)) {
+          chat.message = originalMsg.replaceAll(emoteName, replacement);
+          return chat; // 変換してそのまま使う
         }
       }
 
-      // emoteが含まれていて、ホワイトリストに該当しない場合は除外
-      if (msg.includes("[emote:") && !converted) {
-        msg = "";
+      // emoteという文字列が含まれていれば除外（空文字化）
+      if (originalMsg.includes("emote")) {
+        chat.message = "";
       }
 
-      chat.message = msg;
       return chat;
     });
 
