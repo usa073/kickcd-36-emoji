@@ -17,10 +17,6 @@ export const info_from_url = async function (url: string) {
   return (await get_json("https://kick.com/api/v1/video/" + video_id)) as Video;
 };
 
-const excludeEmote = function (message: string) {
-  return message.replace(/\[emote:.*?\]/g, "");
-};
-
 export const download_comments = async function (
   info: Video,
   show_progress?: (progress: number) => void
@@ -60,7 +56,7 @@ export const download_comments = async function (
           continue;
         }
         const user_id = chat.user_id.toString();
-        const message = excludeEmote(chat.content);
+        const message = chat.content; // ← emote除外せずそのまま
         if (message) {
           list.push({
             vpos,
@@ -141,7 +137,7 @@ export const download_comments_parallel = async function (info: Video) {
           continue;
         }
         const user_id = chat.user_id.toString();
-        const message = excludeEmote(chat.content);
+        const message = chat.content; // ← emote除外せずそのまま
         if (message) {
           list.push({
             vpos,
